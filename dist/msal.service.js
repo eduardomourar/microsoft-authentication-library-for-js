@@ -274,18 +274,26 @@ export class MsalService extends UserAgentApplication {
     acquireTokenSilent(scopes, authority, user, extraQueryParameters) {
         return new Promise((resolve, reject) => {
             super.acquireTokenSilent(scopes, authority, user, extraQueryParameters)
-                .catch((error) => {
-                if (this.config.popUp) {
-                    return super.acquireTokenPopup(scopes, authority, user, extraQueryParameters);
-                }
-                return Promise.reject(error);
-            })
                 .then((token) => {
                 this._renewActive = false;
                 var authenticationResult = new AuthenticationResult(token);
                 this.broadcastService.broadcast('msal:acquireTokenSuccess', authenticationResult);
                 resolve(token);
-            }, (error) => {
+            }, (error = '') => {
+                if (this.config && this.config.fallbackToInteractive) {
+                    if (this.config.popUp) {
+                        return this.acquireTokenPopup(scopes, authority, user, extraQueryParameters);
+                    }
+                    else {
+                        try {
+                            this.acquireTokenRedirect(scopes, authority, user, extraQueryParameters);
+                            return resolve(true);
+                        }
+                        catch (err) {
+                            error += ' ' + err;
+                        }
+                    }
+                }
                 var errorParts = error.split('|');
                 var msalError = new MSALError(errorParts[0], errorParts[1]);
                 this._renewActive = false;
@@ -317,6 +325,9 @@ export class MsalService extends UserAgentApplication {
         if (window.location.href !== acquireTokenStartPage)
             this._cacheStorage.setItem(Constants.loginRequest, window.location.href);
         super.acquireTokenRedirect(scopes, authority, user, extraQueryParameters);
+    }
+    acquireTokenInProgress() {
+        return super.getAcquireTokenInProgress();
     }
     loginInProgress() {
         return super.loginInProgress();

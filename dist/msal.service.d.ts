@@ -38,6 +38,7 @@ export declare class MsalService extends UserAgentApplication {
     acquireTokenSilent(scopes: Array<string>, authority?: string, user?: User, extraQueryParameters?: string): Promise<any>;
     acquireTokenPopup(scopes: Array<string>, authority?: string, user?: User, extraQueryParameters?: string): Promise<any>;
     acquireTokenRedirect(scopes: Array<string>, authority?: string, user?: User, extraQueryParameters?: string): void;
+    acquireTokenInProgress(): boolean;
     loginInProgress(): boolean;
     getUser(): User;
     getScopesForEndpoint(endpoint: string): string[];

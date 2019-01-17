@@ -280,18 +280,27 @@ var MsalService = /** @class */ (function (_super) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             _super.prototype.acquireTokenSilent.call(_this, scopes, authority, user, extraQueryParameters)
-                .catch(function (error) {
-                if (_this.config.popUp) {
-                    return _super.prototype.acquireTokenPopup.call(_this, scopes, authority, user, extraQueryParameters);
-                }
-                return Promise.reject(error);
-            })
                 .then(function (token) {
                 _this._renewActive = false;
                 var authenticationResult = new AuthenticationResult(token);
                 _this.broadcastService.broadcast('msal:acquireTokenSuccess', authenticationResult);
                 resolve(token);
             }, function (error) {
+                if (error === void 0) { error = ''; }
+                if (_this.config && _this.config.fallbackToInteractive) {
+                    if (_this.config.popUp) {
+                        return _this.acquireTokenPopup(scopes, authority, user, extraQueryParameters);
+                    }
+                    else {
+                        try {
+                            _this.acquireTokenRedirect(scopes, authority, user, extraQueryParameters);
+                            return resolve(true);
+                        }
+                        catch (err) {
+                            error += ' ' + err;
+                        }
+                    }
+                }
                 var errorParts = error.split('|');
                 var msalError = new MSALError(errorParts[0], errorParts[1]);
                 _this._renewActive = false;
@@ -324,6 +333,9 @@ var MsalService = /** @class */ (function (_super) {
         if (window.location.href !== acquireTokenStartPage)
             this._cacheStorage.setItem(Constants.loginRequest, window.location.href);
         _super.prototype.acquireTokenRedirect.call(this, scopes, authority, user, extraQueryParameters);
+    };
+    MsalService.prototype.acquireTokenInProgress = function () {
+        return _super.prototype.getAcquireTokenInProgress.call(this);
     };
     MsalService.prototype.loginInProgress = function () {
         return _super.prototype.loginInProgress.call(this);

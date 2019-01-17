@@ -5,6 +5,7 @@ export class MsalConfig {
         this.cacheLocation = "sessionStorage";
         this.loadFrameTimeout = 6000;
         this.navigateToLoginRequestUrl = true;
+        this.fallbackToInteractive = false;
     }
 }
 //# sourceMappingURL=msal-config.js.map
